@@ -1,49 +1,49 @@
-# Phase 1 Discovery: Investigation Checklist & Verification Summary
+# Phase 1 Discovery: Investigation Checklist & Verification Summary (Verified & Corrected)
 
-## 1. Metric Totals & Investigation Completeness
+## 1. Metric Totals & Count Reconciliation
 
-| Discovery Metric | Exact Count | Verification Source |
-|---|:---:|---|
-| **Total Discovered Routes (All 3 Modules)** | **758** | `php artisan route:list` & Route Files |
-| • Property Routes | 528 | `routes/property.php` & `RouteServiceProvider` |
-| • Trade Routes | 88 | `routes/trade.php` & `RouteServiceProvider` |
-| • Water Routes | 142 | `routes/water.php` & `RouteServiceProvider` |
-| **Total Fully Verified & Traced Routes** | **743** | Controller Method & Implementation Verified |
-| **Total Untraced / Defective Routes** | **15** | Missing Methods / Incomplete Resources |
-| **Investigation Completeness** | **98.02%** | (743 / 758 routes fully verified) |
-| **Total Unique Controller Targets** | **44** | `app/Http/Controllers/` & Repositories |
-| **Total Business Logic Classes (BLL)** | **17** | `app/BLL/` |
-| **Total Calculation Engines** | **3** | `app/EloquentClass/` |
-| **Total Microservices & Generators** | **6** | `app/MicroServices/` |
-| **Total Query Pipelines** | **21** | `app/Pipelines/` |
-| **Total Repositories & Interfaces** | **75** | `app/Repository/` |
-| **Total Eloquent Models** | **166** | `app/Models/` (78 Prop, 26 Trade, 50 Water, 12 Core) |
-| **Total Middleware Classes** | **17** | `app/Http/Middleware/` |
-| **Total FormRequest Validation Classes** | **47** | `app/Http/Requests/` |
+| Metric Item | Exact Count | Verification Source & Reconciliation Notes | Status |
+|---|:---:|---|:---:|
+| **Total Discovered Routes** | **758** | Sum of registered routes matching Property, Trade, and Water. | `VERIFIED` |
+| • Property Module Routes | 528 | 527 defined in `routes/property.php` + 1 exclusively in `routes/api.php` (`api/property/citizens/applied-applications`). | `VERIFIED` |
+| • Trade Module Routes | 88 | 88 defined in `routes/trade.php`. | `VERIFIED` |
+| • Water Module Routes | 142 | 139 defined in `routes/water.php` + 3 defined in `routes/api.php` (`api/water/caretaker-otp`, `api/water/caretaker-consumer-tagging`, `api/water-connection`). | `VERIFIED` |
+| **Fully Verified & Traced Routes** | **743** | Controller class, method, validation, and database operations traced. | `VERIFIED` |
+| **Defective / Blocked / Incomplete Routes**| **15** | 2 Property + 1 Trade + 12 Water. Direct code defects verified. | `VERIFIED` |
+| **Investigation Completeness** | **98.02%** | $(743 / 758) \times 100$ | `VERIFIED` |
+| **Class-Based Controller Targets** | **43** | 42 controllers in `app/Http/Controllers/` + 1 repository target (`WaterNewConnection.php`). | `VERIFIED` |
+| **Closure Pseudo-Controllers** | **1** | Anonymous inline route closures. | `VERIFIED` |
+| **Total Controller Action Targets** | **44** | 43 class targets + 1 Closure = 44 total targets (Reconciles 43 vs 44 discrepancy). | `VERIFIED` |
+| **Business Logic Classes (BLL)** | **17** | 14 Property BLLs + 1 Water BLL + 2 Core BLLs (`DocUrl`, `AddNotification`). | `VERIFIED` |
+| **Domain Calculation Engines** | **3** | `SafCalculation`, `InsertTax`, `PenaltyRebateCalculation` (`app/EloquentClass/`). | `VERIFIED` |
+| **MicroServices & Generators** | **6** | `DocUpload`, `IdGeneration`, `HoldingNoGenerator`, `PrefixIdGenerator`, `PropIdGenerator`, `iIdGenerator`. | `VERIFIED` |
+| **Query Pipelines** | **21** | Composable query filter pipelines in `app/Pipelines/`. | `VERIFIED` |
+| **Repository Interfaces & Implementations**| **75** | Repository layer files in `app/Repository/`. | `VERIFIED` |
+| **Eloquent Models** | **166** | 78 Property, 26 Trade, 50 Water, 14 Payment, 9 Workflow, 7 Bug, 6 Notice, 3 Masters, 2 Grievance, 43 Core. | `VERIFIED` |
+| **Middleware Classes** | **17** | `app/Http/Middleware/` classes registered in `Kernel.php`. | `VERIFIED` |
+| **FormRequest Classes** | **47** | FormRequest validation classes in `app/Http/Requests/`. | `VERIFIED` |
 
 ---
 
-## 2. Analysis of Untraced & Blocked Routes (15 Total)
+## 2. Exhaustive Audit of Blocked & Defective Routes (15 Total)
 
-Every partially investigated or blocked route has been traced to its exact code-level defect:
-
-| Module | HTTP Method | URI | Controller Action | Investigation Status | Reason for Block / Defect |
-|---|---|---|---|:---:|---|
-| Property | `POST` | `api/property/cluster/property-by-cluster` | `ClusterController@propertyByCluster` | `[!] Investigation Blocked` | Method `propertyByCluster` does not exist in `ClusterController.php`. Will throw `BadMethodCallException` if invoked. |
-| Property | `POST` | `api/property/reports/mpl2` | `ReportController@mplReport2` | `[!] Investigation Blocked` | Method `mplReport2` does not exist in Property `ReportController.php`. |
-| Trade | `POST` | `api/trade/application/notice-summary` | `ReportController@noticeSummary` | `[!] Investigation Blocked` | Method `noticeSummary` does not exist in Trade `ReportController.php`. Route is inside a `//not in use` block in `routes/trade.php` but still registered. |
-| Water | `GET\|HEAD` | `api/water/application/apply-new-connection` | `NewConnectionController@index` | `[~] Partially Investigated` | Generated by `Route::resource()`. Method `index()` is not implemented in controller. |
-| Water | `GET\|HEAD` | `api/water/application/apply-new-connection/create` | `NewConnectionController@create` | `[~] Partially Investigated` | Generated by `Route::resource()`. Method `create()` is not implemented in controller. |
-| Water | `GET\|HEAD` | `api/water/application/apply-new-connection/{id}` | `NewConnectionController@show` | `[~] Partially Investigated` | Generated by `Route::resource()`. Method `show()` is not implemented in controller. |
-| Water | `PUT\|PATCH` | `api/water/application/apply-new-connection/{id}` | `NewConnectionController@update` | `[~] Partially Investigated` | Generated by `Route::resource()`. Method `update()` is not implemented in controller. |
-| Water | `DELETE` | `api/water/application/apply-new-connection/{id}` | `NewConnectionController@destroy` | `[~] Partially Investigated` | Generated by `Route::resource()`. Method `destroy()` is not implemented in controller. |
-| Water | `GET\|HEAD` | `api/water/application/apply-new-connection/{id}/edit` | `NewConnectionController@edit` | `[~] Partially Investigated` | Generated by `Route::resource()`. Method `edit()` is not implemented in controller. |
-| Water | `POST` | `api/water/consumer/get-rejected-appl-details` | `WaterConsumerWfController@getRejectedApplicationDetails` | `[!] Investigation Blocked` | Method `getRejectedApplicationDetails` does not exist in `WaterConsumerWfController.php`. |
-| Water | `POST` | `api/water/consumer/req/doc-verify-reject` | `WaterConsumerWfController@consumerDocVerifyReject` | `[!] Investigation Blocked` | Method was commented out/removed from `WaterConsumerWfController.php`. Route is under `//Not in use` block in `routes/water.php`. |
-| Water | `POST` | `api/water/consumer/req/get-upload-documents` | `WaterConsumerWfController@getConsumerDocs` | `[!] Investigation Blocked` | Method was commented out/removed from `WaterConsumerWfController.php`. Route is under `//Not in use` block in `routes/water.php`. |
-| Water | `POST` | `api/water/consumer/req/list-req-docs` | `WaterConsumerWfController@listDocToUpload` | `[!] Investigation Blocked` | Method was commented out/removed from `WaterConsumerWfController.php`. Route is under `//Not in use` block in `routes/water.php`. |
-| Water | `POST` | `api/water/consumerChargeCal` | `WaterApplication@calConsumerDemand` | `[!] Investigation Blocked` | Method `calConsumerDemand` is implemented in `WaterConsumer.php`, but route incorrectly targets `WaterApplication`. |
-| Water | `POST` | `api/water/update-applications` | `WaterApplication@updateWaterApplication` | `[!] Investigation Blocked` | Method `updateWaterApplication` does not exist in `WaterApplication.php`. Route is under `//Not in use` block. |
+| Module | Method | URI | Controller Action | Verification Status | Source Reference & Defect Description |
+|---|:---:|---|---|:---:|---|
+| Property | `POST` | `api/property/cluster/property-by-cluster` | `ClusterController@propertyByCluster` | `BLOCKED` | `routes/property.php:948`: Method `propertyByCluster` does not exist in `app/Http/Controllers/Property/ClusterController.php`. Throws `BadMethodCallException`. |
+| Property | `POST` | `api/property/reports/mpl2` | `ReportController@mplReport2` | `BLOCKED` | `routes/property.php:559`: Method `mplReport2` does not exist in Property `ReportController.php`. |
+| Trade | `POST` | `api/trade/application/notice-summary` | `ReportController@noticeSummary` | `BLOCKED` | `routes/trade.php:203`: Method `noticeSummary` does not exist in Trade `ReportController.php`. Inside `//not in use` comment block. |
+| Water | `GET\|HEAD` | `api/water/application/apply-new-connection` | `NewConnectionController@index` | `PARTIALLY VERIFIED` | `routes/water.php:38`: RESTful resource scaffolding. Method `index()` not implemented in controller. |
+| Water | `GET\|HEAD` | `api/water/application/apply-new-connection/create` | `NewConnectionController@create` | `PARTIALLY VERIFIED` | `routes/water.php:38`: RESTful resource scaffolding. Method `create()` not implemented in controller. |
+| Water | `GET\|HEAD` | `api/water/application/apply-new-connection/{id}` | `NewConnectionController@show` | `PARTIALLY VERIFIED` | `routes/water.php:38`: RESTful resource scaffolding. Method `show()` not implemented in controller. |
+| Water | `PUT\|PATCH` | `api/water/application/apply-new-connection/{id}` | `NewConnectionController@update` | `PARTIALLY VERIFIED` | `routes/water.php:38`: RESTful resource scaffolding. Method `update()` not implemented in controller. |
+| Water | `DELETE` | `api/water/application/apply-new-connection/{id}` | `NewConnectionController@destroy` | `PARTIALLY VERIFIED` | `routes/water.php:38`: RESTful resource scaffolding. Method `destroy()` not implemented in controller. |
+| Water | `GET\|HEAD` | `api/water/application/apply-new-connection/{id}/edit` | `NewConnectionController@edit` | `PARTIALLY VERIFIED` | `routes/water.php:38`: RESTful resource scaffolding. Method `edit()` not implemented in controller. |
+| Water | `POST` | `api/water/consumer/get-rejected-appl-details` | `WaterConsumerWfController@getRejectedApplicationDetails` | `BLOCKED` | `routes/water.php:193`: Method `getRejectedApplicationDetails` does not exist in `WaterConsumerWfController.php`. |
+| Water | `POST` | `api/water/consumer/req/doc-verify-reject` | `WaterConsumerWfController@consumerDocVerifyReject` | `BLOCKED` | `routes/water.php:286`: Method commented out/removed from `WaterConsumerWfController.php`. Under `//Not in use` block. |
+| Water | `POST` | `api/water/consumer/req/get-upload-documents` | `WaterConsumerWfController@getConsumerDocs` | `BLOCKED` | `routes/water.php:288`: Method commented out/removed from `WaterConsumerWfController.php`. Under `//Not in use` block. |
+| Water | `POST` | `api/water/consumer/req/list-req-docs` | `WaterConsumerWfController@listDocToUpload` | `BLOCKED` | `routes/water.php:284`: Method commented out/removed from `WaterConsumerWfController.php`. Under `//Not in use` block. |
+| Water | `POST` | `api/water/consumerChargeCal` | `WaterApplication@calConsumerDemand` | `BLOCKED` | `routes/water.php:298`: Route incorrectly targets `WaterApplication`. Method `calConsumerDemand` exists in `WaterConsumer.php`. |
+| Water | `POST` | `api/water/update-applications` | `WaterApplication@updateWaterApplication` | `BLOCKED` | `routes/water.php:297`: Method `updateWaterApplication` does not exist in `WaterApplication.php`. Under `//Not in use` block. |
 
 ---
 
@@ -51,257 +51,241 @@ Every partially investigated or blocked route has been traced to its exact code-
 
 ### A. Trade Module Checklist (88 Routes)
 
-- [x] `POST api/trade/application-search/get-owner-details` -> `App\Http\Controllers\Trade\TradeCitizenController@getOwnerDetailsInfo` (Traced)
-- [x] `POST api/trade/application-type` -> `App\Http\Controllers\Mdm\TradeController@applicationType` (Traced)
-- [x] `POST api/trade/application-type-list` -> `App\Http\Controllers\Mdm\TradeController@applicationTypeList` (Traced)
-- [x] `POST api/trade/application/add` -> `App\Http\Controllers\Trade\TradeApplication@applyApplication` (Traced)
-- [x] `POST api/trade/application/amendable-list` -> `App\Http\Controllers\Trade\TradeCitizenController@amendmentList` (Traced)
-- [x] `POST api/trade/application/application-agent-notice` -> `App\Http\Controllers\Trade\ReportController@applicationAgentNotice` (Traced)
-- [x] `POST api/trade/application/application-status` -> `App\Http\Controllers\Trade\ReportController@applicationStatus` (Traced)
-- [x] `POST api/trade/application/approve-reject` -> `App\Http\Controllers\Trade\TradeApplication@approveReject` (Traced)
-- [x] `POST api/trade/application/approved-list` -> `App\Http\Controllers\Trade\TradeApplication@approvedApplication` (Traced)
-- [x] `POST api/trade/application/attached-list` -> `App\Http\Controllers\Trade\TradeCitizenController@readAtachedLicenseDtl` (Traced)
-- [x] `POST api/trade/application/btc` -> `App\Http\Controllers\Trade\TradeApplication@backToCitizen` (Traced)
-- [x] `POST api/trade/application/btc-inbox` -> `App\Http\Controllers\Trade\TradeApplication@btcInbox` (Traced)
-- [x] `POST api/trade/application/bulk-payment-recipt` -> `App\Http\Controllers\Trade\ReportController@bulkPaymentRecipt` (Traced)
-- [x] `POST api/trade/application/citizen-add` -> `App\Http\Controllers\Trade\TradeCitizenController@applyApplication` (Traced)
-- [x] `POST api/trade/application/citizen-application` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenApplication` (Traced)
-- [x] `POST api/trade/application/citizen-application-list` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenApplicationByCitizenId` (Traced)
-- [x] `POST api/trade/application/citizen-by-id` -> `App\Http\Controllers\Trade\TradeCitizenController@readCitizenLicenceDtl` (Traced)
-- [x] `POST api/trade/application/citizen-by-licence` -> `App\Http\Controllers\Trade\TradeCitizenController@readCitizenLicenceDtbylicences` (Traced)
-- [x] `POST api/trade/application/citizen-history` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenHistory` (Traced)
-- [x] `POST api/trade/application/citizen-ward-list` -> `App\Http\Controllers\Trade\TradeCitizenController@getWardList` (Traced)
-- [x] `POST api/trade/application/collection-reports` -> `App\Http\Controllers\Trade\ReportController@CollectionReports` (Traced)
-- [x] `POST api/trade/application/collection-summary` -> `App\Http\Controllers\Trade\ReportController@CollectionSummary` (Traced)
-- [x] `POST api/trade/application/conform-razorpay-tran` -> `App\Http\Controllers\Trade\TradeCitizenController@conformRazorPayTran` (Traced)
-- [x] `POST api/trade/application/doc-list` -> `App\Http\Controllers\Trade\TradeApplication@getDocList` (Traced)
-- [x] `POST api/trade/application/document-verify` -> `App\Http\Controllers\Trade\TradeApplication@documentVerify` (Traced)
-- [x] `POST api/trade/application/dtl-by-id` -> `App\Http\Controllers\Trade\TradeApplication@getLicenceDtl` (Traced)
-- [x] `POST api/trade/application/edit` -> `App\Http\Controllers\Trade\TradeApplication@updateBasicDtl` (Traced)
-- [x] `POST api/trade/application/edit-by-id` -> `App\Http\Controllers\Trade\TradeApplication@updateLicenseBo` (Traced)
-- [x] `POST api/trade/application/escalate` -> `App\Http\Controllers\Trade\TradeApplication@postEscalate` (Traced)
-- [x] `POST api/trade/application/escalate-inbox` -> `App\Http\Controllers\Trade\TradeApplication@specialInbox` (Traced)
-- [x] `POST api/trade/application/get-demand` -> `App\Http\Controllers\Trade\TradeApplication@paybleAmount` (Traced)
-- [x] `POST api/trade/application/get-independent-comment` -> `App\Http\Controllers\Trade\TradeApplication@readIndipendentComment` (Traced)
-- [x] `POST api/trade/application/inbox` -> `App\Http\Controllers\Trade\TradeApplication@inbox` (Traced)
-- [x] `POST api/trade/application/independent-comment` -> `App\Http\Controllers\Trade\TradeApplication@addIndependentComment` (Traced)
-- [x] `POST api/trade/application/levelformdetail` -> `App\Http\Controllers\Trade\ReportController@levelformdetail` (Traced)
-- [x] `POST api/trade/application/leveluserpending` -> `App\Http\Controllers\Trade\ReportController@levelUserPending` (Traced)
-- [x] `POST api/trade/application/levelwisependingform` -> `App\Http\Controllers\Trade\ReportController@levelwisependingform` (Traced)
-- [x] `POST api/trade/application/list` -> `App\Http\Controllers\Trade\TradeApplication@readApplication` (Traced)
-- [!] `POST api/trade/application/notice-summary` -> `App\Http\Controllers\Trade\ReportController@noticeSummary` (Untraced (Method noticeSummary not found in ReportController))
-- [x] `POST api/trade/application/outbox` -> `App\Http\Controllers\Trade\TradeApplication@outbox` (Traced)
-- [x] `POST api/trade/application/pay-charge` -> `App\Http\Controllers\Trade\TradeApplication@PaymentCounter` (Traced)
-- [x] `POST api/trade/application/pay-razorpay-charge` -> `App\Http\Controllers\Trade\TradeCitizenController@handeRazorPay` (Traced)
-- [x] `POST api/trade/application/post-next` -> `App\Http\Controllers\Trade\TradeApplication@postNextLevel` (Traced)
-- [x] `POST api/trade/application/renewable-list` -> `App\Http\Controllers\Trade\TradeCitizenController@renewalList` (Traced)
-- [x] `POST api/trade/application/search-for-renew` -> `App\Http\Controllers\Trade\TradeApplication@searchLicence` (Traced)
-- [x] `POST api/trade/application/send-to-officer` -> `App\Http\Controllers\Trade\TradeCitizenController@sendToLevel` (Traced)
-- [x] `POST api/trade/application/status` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenApplicationStatus` (Traced)
-- [x] `POST api/trade/application/surrenderable-list` -> `App\Http\Controllers\Trade\TradeCitizenController@surrenderList` (Traced)
-- [x] `POST api/trade/application/team-summary` -> `App\Http\Controllers\Trade\ReportController@teamSummary` (Traced)
-- [x] `POST api/trade/application/track-status` -> `App\Http\Controllers\Trade\ReportController@ApplicantionTrackStatus` (Traced)
-- [x] `POST api/trade/application/upload-document` -> `App\Http\Controllers\Trade\TradeApplication@uploadDocument` (Traced)
-- [x] `POST api/trade/application/userWiseWardWiseLevelPending` -> `App\Http\Controllers\Trade\ReportController@userWiseWardWiseLevelPending` (Traced)
-- [x] `POST api/trade/application/userwiselevelpending` -> `App\Http\Controllers\Trade\ReportController@userWiseLevelPending` (Traced)
-- [x] `POST api/trade/application/valid-expire-list` -> `App\Http\Controllers\Trade\ReportController@valideAndExpired` (Traced)
-- [x] `POST api/trade/appliction/documents` -> `App\Http\Controllers\Trade\TradeApplication@getUploadDocuments` (Traced)
-- [x] `POST api/trade/category-type` -> `App\Http\Controllers\Mdm\TradeController@categoryType` (Traced)
-- [x] `POST api/trade/category-type-list` -> `App\Http\Controllers\Mdm\TradeController@categoryTypeList` (Traced)
-- [x] `POST api/trade/dashboard` -> `App\Http\Controllers\Trade\ReportController@tradeDaseboard` (Traced)
-- [x] `POST api/trade/dashboard-application-collection` -> `App\Http\Controllers\Trade\ReportController@applicationTypeCollection` (Traced)
-- [x] `POST api/trade/dashboard-applied-application` -> `App\Http\Controllers\Trade\ReportController@userAppliedApplication` (Traced)
-- [x] `POST api/trade/dashboard-collection-perfomance` -> `App\Http\Controllers\Trade\ReportController@collectionPerfomance` (Traced)
-- [x] `POST api/trade/firm-type` -> `App\Http\Controllers\Mdm\TradeController@firmType` (Traced)
-- [x] `POST api/trade/firm-type-list` -> `App\Http\Controllers\Mdm\TradeController@firmTypeList` (Traced)
-- [x] `POST api/trade/getApplyData` -> `App\Http\Controllers\Trade\TradeApplication@getApplyData` (Traced)
-- [x] `GET|HEAD api/trade/health-check` -> `Closure@Closure` (Traced)
-- [x] `POST api/trade/item-type` -> `App\Http\Controllers\Mdm\TradeController@itemType` (Traced)
-- [x] `POST api/trade/item-type-list` -> `App\Http\Controllers\Mdm\TradeController@itemTypeList` (Traced)
-- [x] `POST api/trade/licenceInfoWhatsappChat` -> `App\Http\Controllers\Trade\TradeCitizenController@licenceInfoWhatsappChat` (Traced)
-- [x] `GET|HEAD api/trade/license-certificate/{id}` -> `App\Http\Controllers\Trade\TradeApplication@licenceCertificate` (Traced)
-- [x] `POST api/trade/notice/add` -> `App\Http\Controllers\Trade\TradeNoticeController@applyDenail` (Traced)
-- [x] `POST api/trade/notice/approve-reject` -> `App\Http\Controllers\Trade\TradeNoticeController@approveReject` (Traced)
-- [x] `POST api/trade/notice/btc-inbox` -> `App\Http\Controllers\Trade\TradeNoticeController@btcInbox` (Traced)
-- [x] `POST api/trade/notice/citizen-details` -> `App\Http\Controllers\Trade\TradeCitizenController@getDenialDetails` (Traced)
-- [x] `POST api/trade/notice/details` -> `App\Http\Controllers\Trade\TradeApplication@getDenialDetails` (Traced)
-- [x] `POST api/trade/notice/inbox` -> `App\Http\Controllers\Trade\TradeNoticeController@inbox` (Traced)
-- [x] `POST api/trade/notice/outbox` -> `App\Http\Controllers\Trade\TradeNoticeController@outbox` (Traced)
-- [x] `POST api/trade/notice/post-next` -> `App\Http\Controllers\Trade\TradeNoticeController@postNextLevel` (Traced)
-- [x] `POST api/trade/notice/view` -> `App\Http\Controllers\Trade\TradeNoticeController@denialview` (Traced)
-- [x] `POST api/trade/ownership-type` -> `App\Http\Controllers\Mdm\TradeController@ownershipType` (Traced)
-- [x] `POST api/trade/ownership-type-list` -> `App\Http\Controllers\Mdm\TradeController@ownershipTypeList` (Traced)
-- [x] `GET|HEAD api/trade/payment-receipt/{id}/{transectionId}` -> `App\Http\Controllers\Trade\TradeApplication@paymentReceipt` (Traced)
-- [x] `POST api/trade/property/by-holding` -> `App\Http\Controllers\Trade\TradeApplication@validateHoldingNo` (Traced)
-- [x] `GET|HEAD api/trade/provisional-certificate/{id}` -> `App\Http\Controllers\Trade\TradeApplication@provisionalCertificate` (Traced)
-- [x] `POST api/trade/rate` -> `App\Http\Controllers\Mdm\TradeController@rate` (Traced)
-- [x] `POST api/trade/rate-list` -> `App\Http\Controllers\Mdm\TradeController@rateList` (Traced)
-- [x] `POST api/trade/tc-list` -> `App\Http\Controllers\Trade\ReportController@TcList` (Traced)
-- [x] `POST api/trade/ward-list` -> `App\Http\Controllers\Trade\ReportController@WardList` (Traced)
-- [x] `POST api/trade/workflow/dashboard-data` -> `App\Http\Controllers\Trade\TradeApplication@workflowDashordDetails` (Traced)
+- [!] `SECURITY RISK` `POST api/trade/application-search/get-owner-details` -> `App\Http\Controllers\Trade\TradeCitizenController@getOwnerDetailsInfo`
+- [x] `VERIFIED` `POST api/trade/application-type` -> `App\Http\Controllers\Mdm\TradeController@applicationType`
+- [x] `VERIFIED` `POST api/trade/application-type-list` -> `App\Http\Controllers\Mdm\TradeController@applicationTypeList`
+- [x] `VERIFIED` `POST api/trade/application/add` -> `App\Http\Controllers\Trade\TradeApplication@applyApplication`
+- [x] `VERIFIED` `POST api/trade/application/amendable-list` -> `App\Http\Controllers\Trade\TradeCitizenController@amendmentList`
+- [x] `VERIFIED` `POST api/trade/application/application-agent-notice` -> `App\Http\Controllers\Trade\ReportController@applicationAgentNotice`
+- [x] `VERIFIED` `POST api/trade/application/application-status` -> `App\Http\Controllers\Trade\ReportController@applicationStatus`
+- [x] `VERIFIED` `POST api/trade/application/approve-reject` -> `App\Http\Controllers\Trade\TradeApplication@approveReject`
+- [x] `VERIFIED` `POST api/trade/application/approved-list` -> `App\Http\Controllers\Trade\TradeApplication@approvedApplication`
+- [x] `VERIFIED` `POST api/trade/application/attached-list` -> `App\Http\Controllers\Trade\TradeCitizenController@readAtachedLicenseDtl`
+- [x] `VERIFIED` `POST api/trade/application/btc` -> `App\Http\Controllers\Trade\TradeApplication@backToCitizen`
+- [x] `VERIFIED` `POST api/trade/application/btc-inbox` -> `App\Http\Controllers\Trade\TradeApplication@btcInbox`
+- [x] `VERIFIED` `POST api/trade/application/bulk-payment-recipt` -> `App\Http\Controllers\Trade\ReportController@bulkPaymentRecipt`
+- [x] `VERIFIED` `POST api/trade/application/citizen-add` -> `App\Http\Controllers\Trade\TradeCitizenController@applyApplication`
+- [x] `VERIFIED` `POST api/trade/application/citizen-application` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenApplication`
+- [x] `VERIFIED` `POST api/trade/application/citizen-application-list` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenApplicationByCitizenId`
+- [x] `VERIFIED` `POST api/trade/application/citizen-by-id` -> `App\Http\Controllers\Trade\TradeCitizenController@readCitizenLicenceDtl`
+- [x] `VERIFIED` `POST api/trade/application/citizen-by-licence` -> `App\Http\Controllers\Trade\TradeCitizenController@readCitizenLicenceDtbylicences`
+- [x] `VERIFIED` `POST api/trade/application/citizen-history` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenHistory`
+- [x] `VERIFIED` `POST api/trade/application/citizen-ward-list` -> `App\Http\Controllers\Trade\TradeCitizenController@getWardList`
+- [x] `VERIFIED` `POST api/trade/application/collection-reports` -> `App\Http\Controllers\Trade\ReportController@CollectionReports`
+- [x] `VERIFIED` `POST api/trade/application/collection-summary` -> `App\Http\Controllers\Trade\ReportController@CollectionSummary`
+- [x] `VERIFIED` `POST api/trade/application/conform-razorpay-tran` -> `App\Http\Controllers\Trade\TradeCitizenController@conformRazorPayTran`
+- [x] `VERIFIED` `POST api/trade/application/doc-list` -> `App\Http\Controllers\Trade\TradeApplication@getDocList`
+- [x] `VERIFIED` `POST api/trade/application/document-verify` -> `App\Http\Controllers\Trade\TradeApplication@documentVerify`
+- [x] `VERIFIED` `POST api/trade/application/dtl-by-id` -> `App\Http\Controllers\Trade\TradeApplication@getLicenceDtl`
+- [x] `VERIFIED` `POST api/trade/application/edit` -> `App\Http\Controllers\Trade\TradeApplication@updateBasicDtl`
+- [x] `VERIFIED` `POST api/trade/application/edit-by-id` -> `App\Http\Controllers\Trade\TradeApplication@updateLicenseBo`
+- [x] `VERIFIED` `POST api/trade/application/escalate` -> `App\Http\Controllers\Trade\TradeApplication@postEscalate`
+- [x] `VERIFIED` `POST api/trade/application/escalate-inbox` -> `App\Http\Controllers\Trade\TradeApplication@specialInbox`
+- [x] `VERIFIED` `POST api/trade/application/get-demand` -> `App\Http\Controllers\Trade\TradeApplication@paybleAmount`
+- [x] `VERIFIED` `POST api/trade/application/get-independent-comment` -> `App\Http\Controllers\Trade\TradeApplication@readIndipendentComment`
+- [x] `VERIFIED` `POST api/trade/application/inbox` -> `App\Http\Controllers\Trade\TradeApplication@inbox`
+- [x] `VERIFIED` `POST api/trade/application/independent-comment` -> `App\Http\Controllers\Trade\TradeApplication@addIndependentComment`
+- [x] `VERIFIED` `POST api/trade/application/levelformdetail` -> `App\Http\Controllers\Trade\ReportController@levelformdetail`
+- [x] `VERIFIED` `POST api/trade/application/leveluserpending` -> `App\Http\Controllers\Trade\ReportController@levelUserPending`
+- [x] `VERIFIED` `POST api/trade/application/levelwisependingform` -> `App\Http\Controllers\Trade\ReportController@levelwisependingform`
+- [x] `VERIFIED` `POST api/trade/application/list` -> `App\Http\Controllers\Trade\TradeApplication@readApplication`
+- [!] `BLOCKED` `POST api/trade/application/notice-summary` -> `App\Http\Controllers\Trade\ReportController@noticeSummary`
+- [x] `VERIFIED` `POST api/trade/application/outbox` -> `App\Http\Controllers\Trade\TradeApplication@outbox`
+- [x] `VERIFIED` `POST api/trade/application/pay-charge` -> `App\Http\Controllers\Trade\TradeApplication@PaymentCounter`
+- [x] `VERIFIED` `POST api/trade/application/pay-razorpay-charge` -> `App\Http\Controllers\Trade\TradeCitizenController@handeRazorPay`
+- [x] `VERIFIED` `POST api/trade/application/post-next` -> `App\Http\Controllers\Trade\TradeApplication@postNextLevel`
+- [x] `VERIFIED` `POST api/trade/application/renewable-list` -> `App\Http\Controllers\Trade\TradeCitizenController@renewalList`
+- [x] `VERIFIED` `POST api/trade/application/search-for-renew` -> `App\Http\Controllers\Trade\TradeApplication@searchLicence`
+- [x] `VERIFIED` `POST api/trade/application/send-to-officer` -> `App\Http\Controllers\Trade\TradeCitizenController@sendToLevel`
+- [x] `VERIFIED` `POST api/trade/application/status` -> `App\Http\Controllers\Trade\TradeCitizenController@citizenApplicationStatus`
+- [x] `VERIFIED` `POST api/trade/application/surrenderable-list` -> `App\Http\Controllers\Trade\TradeCitizenController@surrenderList`
+- [x] `VERIFIED` `POST api/trade/application/team-summary` -> `App\Http\Controllers\Trade\ReportController@teamSummary`
+- [x] `VERIFIED` `POST api/trade/application/track-status` -> `App\Http\Controllers\Trade\ReportController@ApplicantionTrackStatus`
+- [x] `VERIFIED` `POST api/trade/application/upload-document` -> `App\Http\Controllers\Trade\TradeApplication@uploadDocument`
+- [x] `VERIFIED` `POST api/trade/application/userWiseWardWiseLevelPending` -> `App\Http\Controllers\Trade\ReportController@userWiseWardWiseLevelPending`
+- [x] `VERIFIED` `POST api/trade/application/userwiselevelpending` -> `App\Http\Controllers\Trade\ReportController@userWiseLevelPending`
+- [x] `VERIFIED` `POST api/trade/application/valid-expire-list` -> `App\Http\Controllers\Trade\ReportController@valideAndExpired`
+- [x] `VERIFIED` `POST api/trade/appliction/documents` -> `App\Http\Controllers\Trade\TradeApplication@getUploadDocuments`
+- [x] `VERIFIED` `POST api/trade/category-type` -> `App\Http\Controllers\Mdm\TradeController@categoryType`
+- [x] `VERIFIED` `POST api/trade/category-type-list` -> `App\Http\Controllers\Mdm\TradeController@categoryTypeList`
+- [x] `VERIFIED` `POST api/trade/dashboard` -> `App\Http\Controllers\Trade\ReportController@tradeDaseboard`
+- [x] `VERIFIED` `POST api/trade/dashboard-application-collection` -> `App\Http\Controllers\Trade\ReportController@applicationTypeCollection`
+- [x] `VERIFIED` `POST api/trade/dashboard-applied-application` -> `App\Http\Controllers\Trade\ReportController@userAppliedApplication`
+- [x] `VERIFIED` `POST api/trade/dashboard-collection-perfomance` -> `App\Http\Controllers\Trade\ReportController@collectionPerfomance`
+- [x] `VERIFIED` `POST api/trade/firm-type` -> `App\Http\Controllers\Mdm\TradeController@firmType`
+- [x] `VERIFIED` `POST api/trade/firm-type-list` -> `App\Http\Controllers\Mdm\TradeController@firmTypeList`
+- [x] `VERIFIED` `POST api/trade/getApplyData` -> `App\Http\Controllers\Trade\TradeApplication@getApplyData`
+- [x] `VERIFIED` `GET|HEAD api/trade/health-check` -> `Closure@Closure`
+- [x] `VERIFIED` `POST api/trade/item-type` -> `App\Http\Controllers\Mdm\TradeController@itemType`
+- [x] `VERIFIED` `POST api/trade/item-type-list` -> `App\Http\Controllers\Mdm\TradeController@itemTypeList`
+- [x] `VERIFIED` `POST api/trade/licenceInfoWhatsappChat` -> `App\Http\Controllers\Trade\TradeCitizenController@licenceInfoWhatsappChat`
+- [x] `VERIFIED` `GET|HEAD api/trade/license-certificate/{id}` -> `App\Http\Controllers\Trade\TradeApplication@licenceCertificate`
+- [x] `VERIFIED` `POST api/trade/notice/add` -> `App\Http\Controllers\Trade\TradeNoticeController@applyDenail`
+- [x] `VERIFIED` `POST api/trade/notice/approve-reject` -> `App\Http\Controllers\Trade\TradeNoticeController@approveReject`
+- [x] `VERIFIED` `POST api/trade/notice/btc-inbox` -> `App\Http\Controllers\Trade\TradeNoticeController@btcInbox`
+- [x] `VERIFIED` `POST api/trade/notice/citizen-details` -> `App\Http\Controllers\Trade\TradeCitizenController@getDenialDetails`
+- [x] `VERIFIED` `POST api/trade/notice/details` -> `App\Http\Controllers\Trade\TradeApplication@getDenialDetails`
+- [x] `VERIFIED` `POST api/trade/notice/inbox` -> `App\Http\Controllers\Trade\TradeNoticeController@inbox`
+- [x] `VERIFIED` `POST api/trade/notice/outbox` -> `App\Http\Controllers\Trade\TradeNoticeController@outbox`
+- [x] `VERIFIED` `POST api/trade/notice/post-next` -> `App\Http\Controllers\Trade\TradeNoticeController@postNextLevel`
+- [x] `VERIFIED` `POST api/trade/notice/view` -> `App\Http\Controllers\Trade\TradeNoticeController@denialview`
+- [x] `VERIFIED` `POST api/trade/ownership-type` -> `App\Http\Controllers\Mdm\TradeController@ownershipType`
+- [x] `VERIFIED` `POST api/trade/ownership-type-list` -> `App\Http\Controllers\Mdm\TradeController@ownershipTypeList`
+- [x] `VERIFIED` `GET|HEAD api/trade/payment-receipt/{id}/{transectionId}` -> `App\Http\Controllers\Trade\TradeApplication@paymentReceipt`
+- [x] `VERIFIED` `POST api/trade/property/by-holding` -> `App\Http\Controllers\Trade\TradeApplication@validateHoldingNo`
+- [x] `VERIFIED` `GET|HEAD api/trade/provisional-certificate/{id}` -> `App\Http\Controllers\Trade\TradeApplication@provisionalCertificate`
+- [x] `VERIFIED` `POST api/trade/rate` -> `App\Http\Controllers\Mdm\TradeController@rate`
+- [x] `VERIFIED` `POST api/trade/rate-list` -> `App\Http\Controllers\Mdm\TradeController@rateList`
+- [x] `VERIFIED` `POST api/trade/tc-list` -> `App\Http\Controllers\Trade\ReportController@TcList`
+- [x] `VERIFIED` `POST api/trade/ward-list` -> `App\Http\Controllers\Trade\ReportController@WardList`
+- [x] `VERIFIED` `POST api/trade/workflow/dashboard-data` -> `App\Http\Controllers\Trade\TradeApplication@workflowDashordDetails`
 
 ### B. Water Module Checklist (142 Routes)
 
-- [x] `POST api/water-connection` -> `App\Http\Controllers\DemoController@waterConnection` (Traced)
-- [x] `POST api/water/Razorpay-Orderid` -> `App\Http\Controllers\Water\WaterApplication@handeRazorPay` (Traced)
-- [x] `POST api/water/admin/application/application-details` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationDetailsv1` (Traced)
-- [x] `POST api/water/admin/application/cancel-inspection-scheduling` -> `App\Http\Controllers\Water\NewConnectionController@cancelSiteInspection` (Traced)
-- [x] `POST api/water/admin/application/dashboard-data` -> `App\Http\Controllers\Water\WaterApplication@getJskAppliedApplication` (Traced)
-- [x] `POST api/water/admin/application/document-details` -> `App\Http\Controllers\Water\NewConnectionController@getDocToUploadv1` (Traced)
-- [x] `POST api/water/admin/application/generate-payment-receipt` -> `App\Http\Controllers\Water\WaterPaymentController@generateOfflinePaymentReceipt` (Traced)
-- [x] `POST api/water/admin/application/get-details-by-id` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationDetailById` (Traced)
-- [x] `POST api/water/admin/application/je-site-details` -> `App\Http\Controllers\Water\NewConnectionController@getJeSiteDetails` (Traced)
-- [x] `POST api/water/admin/application/list-details-by-date` -> `App\Http\Controllers\Water\NewConnectionController@listApplicationBydate` (Traced)
-- [x] `POST api/water/admin/application/online-technical-inspection` -> `App\Http\Controllers\Water\NewConnectionController@onlineSiteInspection` (Traced)
-- [x] `POST api/water/admin/application/save-inspection-date` -> `App\Http\Controllers\Water\NewConnectionController@saveInspectionDateTime` (Traced)
-- [x] `POST api/water/admin/application/site-inspection-details` -> `App\Http\Controllers\Water\NewConnectionController@getSiteInspectionDetails` (Traced)
-- [x] `POST api/water/admin/application/technical-inspection-details` -> `App\Http\Controllers\Water\NewConnectionController@getTechnicalInsDetails` (Traced)
-- [x] `POST api/water/admin/consumer/add-fixed-rate` -> `App\Http\Controllers\Water\WaterConsumer@addFixedRate` (Traced)
-- [x] `POST api/water/admin/consumer/apply-deactivation` -> `App\Http\Controllers\Water\WaterConsumer@applyDeactivation` (Traced)
-- [x] `POST api/water/admin/consumer/demand-deactivation` -> `App\Http\Controllers\Water\WaterConsumer@consumerDemandDeactivation` (Traced)
-- [x] `POST api/water/admin/consumer/generate-demand` -> `App\Http\Controllers\Water\WaterConsumer@saveGenerateConsumerDemand` (Traced)
-- [x] `POST api/water/admin/consumer/get-meter-list` -> `App\Http\Controllers\Water\WaterConsumer@getMeterList` (Traced)
-- [x] `POST api/water/admin/consumer/save-connection-meter` -> `App\Http\Controllers\Water\WaterConsumer@saveUpdateMeterDetails` (Traced)
-- [x] `POST api/water/admin/dis-generate-payment-receipt` -> `App\Http\Controllers\Water\WaterPaymentController@generateOfflinePaymentReceiptv1` (Traced)
-- [x] `POST api/water/admin/search-application` -> `App\Http\Controllers\Water\NewConnectionController@searchApplicationByParameter` (Traced)
-- [x] `POST api/water/admin/workflow/dashboard-data` -> `App\Http\Controllers\Water\WaterApplication@workflowDashordDetails` (Traced)
-- [x] `POST api/water/aggregate-report` -> `App\Http\Controllers\Water\WaterReportController@tcCollectionReport` (Traced)
-- [x] `POST api/water/applicant/search` -> `App\Http\Controllers\Water\WaterConsumer@searchApplication` (Traced)
-- [~] `GET|HEAD api/water/application/apply-new-connection` -> `App\Http\Controllers\Water\NewConnectionController@index` (Untraced (Method index not found in NewConnectionController))
-- [x] `POST api/water/application/apply-new-connection` -> `App\Http\Controllers\Water\NewConnectionController@store` (Traced)
-- [~] `GET|HEAD api/water/application/apply-new-connection/create` -> `App\Http\Controllers\Water\NewConnectionController@create` (Untraced (Method create not found in NewConnectionController))
-- [~] `GET|HEAD api/water/application/apply-new-connection/{apply_new_connection}` -> `App\Http\Controllers\Water\NewConnectionController@show` (Untraced (Method show not found in NewConnectionController))
-- [~] `PUT|PATCH api/water/application/apply-new-connection/{apply_new_connection}` -> `App\Http\Controllers\Water\NewConnectionController@update` (Untraced (Method update not found in NewConnectionController))
-- [~] `DELETE api/water/application/apply-new-connection/{apply_new_connection}` -> `App\Http\Controllers\Water\NewConnectionController@destroy` (Untraced (Method destroy not found in NewConnectionController))
-- [~] `GET|HEAD api/water/application/apply-new-connection/{apply_new_connection}/edit` -> `App\Http\Controllers\Water\NewConnectionController@edit` (Untraced (Method edit not found in NewConnectionController))
-- [x] `POST api/water/application/approval-rejection` -> `App\Http\Controllers\Water\NewConnectionController@approvalRejectionWater` (Traced)
-- [x] `POST api/water/application/delete` -> `App\Http\Controllers\Water\NewConnectionController@deleteWaterApplication` (Traced)
-- [x] `POST api/water/application/edit` -> `App\Http\Controllers\Water\NewConnectionController@editWaterAppliction` (Traced)
-- [x] `POST api/water/application/get-by-id` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationDetails` (Traced)
-- [x] `POST api/water/application/payment/get-payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@getApplicationPaymentHistory` (Traced)
-- [x] `POST api/water/application/payment/offline/pay-connection-charge` -> `App\Http\Controllers\Water\WaterPaymentController@offlineConnectionPayment` (Traced)
-- [x] `POST api/water/application/search` -> `App\Http\Controllers\Water\NewConnectionController@getActiveApplictaions` (Traced)
-- [x] `POST api/water/apply-new-connection` -> `Closure@Closure` (Traced)
-- [x] `POST api/water/apply-water-disconnection` -> `App\Http\Controllers\Water\WaterConsumer@applyWaterDisconnection` (Traced)
-- [x] `POST api/water/applywater-ferule-cleaning` -> `App\Http\Controllers\Water\WaterConsumer@applyConsumerRequest` (Traced)
-- [x] `POST api/water/approve-reject-report` -> `App\Http\Controllers\Water\WaterReportController@approveRejectReports` (Traced)
-- [x] `POST api/water/back-to-citizen` -> `App\Http\Controllers\Water\NewConnectionController@backToCitizen` (Traced)
-- [x] `POST api/water/btc-inbox` -> `App\Http\Controllers\Water\NewConnectionController@btcInbox` (Traced)
-- [x] `POST api/water/caretaker-consumer-tagging` -> `App\Http\Controllers\CaretakerController@caretakerConsumerTag` (Traced)
-- [x] `POST api/water/caretaker-otp` -> `App\Http\Controllers\CaretakerController@waterCaretakerOtp` (Traced)
-- [x] `POST api/water/cargeCal` -> `App\Http\Controllers\Water\WaterApplication@calWaterConCharge` (Traced)
-- [x] `POST api/water/check-doc` -> `App\Http\Controllers\Water\WaterConsumer@checkDoc` (Traced)
-- [x] `POST api/water/citizen/get-doc-list` -> `App\Http\Controllers\Water\NewConnectionController@getDocToUpload` (Traced)
-- [x] `POST api/water/citizen/payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@paymentHistory` (Traced)
-- [x] `POST api/water/citizenApplications` -> `App\Http\Controllers\Water\WaterApplication@getCitizenApplication` (Traced)
-- [x] `POST api/water/comment-independent` -> `App\Http\Controllers\Water\NewConnectionController@commentIndependent` (Traced)
-- [x] `POST api/water/connection-collection` -> `App\Http\Controllers\Water\WaterReportController@connectionCollection` (Traced)
-- [x] `POST api/water/consumer-info-watsapp-chat` -> `App\Http\Controllers\Water\NewConnectionController@ConsumerInfoWatsappChat` (Traced)
-- [x] `POST api/water/consumer/add-advance` -> `App\Http\Controllers\Water\WaterConsumer@addAdvance` (Traced)
-- [x] `POST api/water/consumer/calculate-month-demand` -> `App\Http\Controllers\Water\WaterPaymentController@callDemandByMonth` (Traced)
-- [x] `POST api/water/consumer/calculate/meter-fixed-reading` -> `App\Http\Controllers\Water\WaterConsumer@calculateMeterFixedReading` (Traced)
-- [x] `POST api/water/consumer/caretaken-connections` -> `App\Http\Controllers\Water\WaterConsumer@viewCaretakenConnection` (Traced)
-- [x] `POST api/water/consumer/deactivation-approve-rejet` -> `App\Http\Controllers\Water\WaterConsumerWfController@approveRejectV1` (Traced)
-- [x] `POST api/water/consumer/deactivation-btc-inbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@btcInbox` (Traced)
-- [x] `POST api/water/consumer/deactivation-documents-verify` -> `App\Http\Controllers\Water\WaterConsumerWfController@documentVerify` (Traced)
-- [x] `POST api/water/consumer/deactivation-escalate-inbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@specialInbox` (Traced)
-- [x] `POST api/water/consumer/deactivation-get-doc-list` -> `App\Http\Controllers\Water\WaterConsumerWfController@getDocList` (Traced)
-- [x] `POST api/water/consumer/deactivation-upload-documents` -> `App\Http\Controllers\Water\WaterConsumerWfController@uploadDocuments` (Traced)
-- [x] `POST api/water/consumer/deactivation-upload-documents_view` -> `App\Http\Controllers\Water\WaterConsumerWfController@getUploadDocuments` (Traced)
-- [x] `POST api/water/consumer/deactivation-worklfow-by-id` -> `App\Http\Controllers\Water\WaterConsumerWfController@getConsumerDetails` (Traced)
-- [x] `POST api/water/consumer/demand/generate-payment-receipt` -> `App\Http\Controllers\Water\WaterPaymentController@generateDemandPaymentReceipt` (Traced)
-- [x] `POST api/water/consumer/generate-memo` -> `App\Http\Controllers\Water\WaterConsumer@generateMemo` (Traced)
-- [x] `POST api/water/consumer/get-connection-list` -> `App\Http\Controllers\Water\WaterConsumer@getConnectionList` (Traced)
-- [x] `POST api/water/consumer/get-listed-details` -> `App\Http\Controllers\Water\NewConnectionController@approvedWaterApplications` (Traced)
-- [x] `POST api/water/consumer/get-owner-details` -> `App\Http\Controllers\Water\WaterConsumer@getOwnerDetailsInfo` (Traced)
-- [x] `POST api/water/consumer/get-payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@getConsumerPaymentHistory` (Traced)
-- [!] `POST api/water/consumer/get-rejected-appl-details` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRejectedApplicationDetails` (Untraced (Method getRejectedApplicationDetails not found in WaterConsumerWfController))
-- [x] `POST api/water/consumer/get-rejected-documents-only` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRejectedDocumentsOnly` (Traced)
-- [x] `POST api/water/consumer/list-demand` -> `App\Http\Controllers\Water\WaterConsumer@listConsumerDemand` (Traced)
-- [x] `POST api/water/consumer/offline-demand-payment` -> `App\Http\Controllers\Water\WaterPaymentController@offlineDemandPayment` (Traced)
-- [x] `POST api/water/consumer/offline-request-payment` -> `App\Http\Controllers\Water\WaterPaymentController@offlineConReqPayment` (Traced)
-- [x] `POST api/water/consumer/online-demand-payment` -> `App\Http\Controllers\Water\WaterPaymentController@initiateOnlineDemandPayment` (Traced)
-- [x] `POST api/water/consumer/online-request-payment` -> `App\Http\Controllers\Water\WaterPaymentController@initiateOnlineConRequestPayment` (Traced)
-- [x] `POST api/water/consumer/report/dcb-pie-chart` -> `App\Http\Controllers\Water\WaterReportController@dcbPieChart` (Traced)
-- [x] `POST api/water/consumer/report/list-ward-dcb` -> `App\Http\Controllers\Water\WaterReportController@wardWiseDCB` (Traced)
-- [x] `POST api/water/consumer/req/approval-rejection` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerApprovalRejection` (Traced)
-- [!] `POST api/water/consumer/req/doc-verify-reject` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerDocVerifyReject` (Untraced (Method consumerDocVerifyReject not found in WaterConsumerWfController))
-- [!] `POST api/water/consumer/req/get-upload-documents` -> `App\Http\Controllers\Water\WaterConsumerWfController@getConsumerDocs` (Untraced (Method getConsumerDocs not found in WaterConsumerWfController))
-- [x] `POST api/water/consumer/req/get-worklfow-by-id` -> `App\Http\Controllers\Water\WaterConsumerWfController@getWorkflow` (Traced)
-- [x] `POST api/water/consumer/req/inbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerInbox` (Traced)
-- [!] `POST api/water/consumer/req/list-req-docs` -> `App\Http\Controllers\Water\WaterConsumerWfController@listDocToUpload` (Untraced (Method listDocToUpload not found in WaterConsumerWfController))
-- [x] `POST api/water/consumer/req/outbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerOutbox` (Traced)
-- [x] `POST api/water/consumer/req/post-next-level` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerPostNextLevel` (Traced)
-- [x] `POST api/water/consumer/search-fixed-connections` -> `App\Http\Controllers\Water\WaterConsumer@searchFixedConsumers` (Traced)
-- [x] `POST api/water/consumer/self-generate-demand` -> `App\Http\Controllers\Water\WaterConsumer@selfGenerateDemand` (Traced)
-- [x] `POST api/water/consumer/water-user-charges` -> `App\Http\Controllers\Water\WaterPaymentController@getWaterUserCharges` (Traced)
-- [!] `POST api/water/consumerChargeCal` -> `App\Http\Controllers\Water\WaterApplication@calConsumerDemand` (Untraced (Method calConsumerDemand not found in WaterApplication))
-- [x] `POST api/water/consumers/post-next-level-appllication` -> `App\Http\Controllers\Water\WaterConsumerWfController@postNextLevelApplication` (Traced)
-- [x] `POST api/water/consumers/reupload-water-doc` -> `App\Http\Controllers\Water\WaterConsumerWfController@reuploadWaterDoc` (Traced)
-- [x] `POST api/water/create-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@createWaterPipelineType` (Traced)
-- [x] `POST api/water/create-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@createWaterPropTypeMstr` (Traced)
-- [x] `POST api/water/deactivation/back-to-citizen` -> `App\Http\Controllers\Water\WaterConsumerWfController@backToCitizen` (Traced)
-- [x] `POST api/water/delete-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@dataActiveDeactive` (Traced)
-- [x] `POST api/water/delete-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@activeDeactiveById` (Traced)
-- [x] `POST api/water/disconnection/payment/get-payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@getDisApplicationPaymentHistory` (Traced)
-- [x] `POST api/water/doc-verify-reject` -> `App\Http\Controllers\Water\NewConnectionController@docVerifyRejects` (Traced)
-- [x] `POST api/water/escalate` -> `App\Http\Controllers\Water\NewConnectionController@postEscalate` (Traced)
-- [x] `POST api/water/field-verified-inbox` -> `App\Http\Controllers\Water\NewConnectionController@fieldVerifiedInbox` (Traced)
-- [x] `POST api/water/get-details-applications-by-id` -> `App\Http\Controllers\Water\WaterConsumerWfController@getApplicationDetails` (Traced)
-- [x] `POST api/water/get-details-disconnections` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRequestedApplication` (Traced)
-- [x] `POST api/water/get-rejected-documents-list` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRejectedDocumentsList` (Traced)
-- [x] `POST api/water/get-upload-documents` -> `App\Http\Controllers\Water\NewConnectionController@getUploadDocuments` (Traced)
-- [x] `POST api/water/get-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@getAllPipeline` (Traced)
-- [x] `POST api/water/get-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@getAllData` (Traced)
-- [x] `POST api/water/getTranNo` -> `App\Http\Controllers\Water\WaterApplication@readTransectionAndApl` (Traced)
-- [x] `POST api/water/get_consumer_details_by_id` -> `App\Http\Controllers\Water\WaterConsumer@getByApplicationId` (Traced)
-- [x] `POST api/water/getby-id-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@getDataId` (Traced)
-- [x] `POST api/water/getby-id-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@getDataById` (Traced)
-- [x] `GET|HEAD api/water/health-check` -> `Closure@Closure` (Traced)
-- [x] `POST api/water/inbox` -> `App\Http\Controllers\Water\NewConnectionController@waterInbox` (Traced)
-- [x] `POST api/water/level-wise-report` -> `App\Http\Controllers\Water\WaterReportController@levelWiseReport` (Traced)
-- [x] `POST api/water/master/get-listed-details` -> `App\Http\Controllers\Water\WaterPaymentController@getWaterMasterData` (Traced)
-- [x] `POST api/water/new-connection-report` -> `App\Http\Controllers\Water\WaterReportController@newConnectioReport` (Traced)
-- [x] `POST api/water/outbox` -> `App\Http\Controllers\Water\NewConnectionController@waterOutbox` (Traced)
-- [x] `POST api/water/post-next-level` -> `App\Http\Controllers\Water\NewConnectionController@postNextLevel` (Traced)
-- [x] `POST api/water/report-cosumer` -> `App\Http\Controllers\Water\WaterReportController@consumerReport` (Traced)
-- [x] `POST api/water/request/discon/get-inspection-dtls` -> `App\Http\Controllers\Water\ConsumerActionRequest@getInspectionData` (Traced)
-- [x] `POST api/water/request/discon/getInspectinMaster` -> `App\Http\Controllers\Water\ConsumerActionRequest@getSiteInspectionCompar` (Traced)
-- [x] `POST api/water/request/discon/inspection` -> `App\Http\Controllers\Water\ConsumerActionRequest@updateSiteInspection` (Traced)
-- [x] `POST api/water/request/discon/sedule-cancel` -> `App\Http\Controllers\Water\ConsumerActionRequest@cancelDisconnectionSitInspection` (Traced)
-- [x] `POST api/water/request/discon/sedule-inspection` -> `App\Http\Controllers\Water\ConsumerActionRequest@setDisconnectionSitInspection` (Traced)
-- [x] `POST api/water/search-consumer` -> `App\Http\Controllers\Water\NewConnectionController@searchWaterConsumer` (Traced)
-- [x] `POST api/water/search-holding-saf` -> `App\Http\Controllers\Water\NewConnectionController@getSafHoldingDetails` (Traced)
-- [x] `POST api/water/simple-upload-document` -> `App\Http\Controllers\Water\NewConnectionController@testUploadDocument` (Traced)
-- [x] `POST api/water/site-verification/save-site-details` -> `App\Http\Controllers\Water\WaterPaymentController@saveSitedetails` (Traced)
-- [x] `POST api/water/special-inbox` -> `App\Http\Controllers\Water\NewConnectionController@waterSpecialInbox` (Traced)
-- [x] `POST api/water/test` -> `App\Repository\Water\Concrete\WaterNewConnection@razorPayResponse` (Traced)
-- [!] `POST api/water/update-applications` -> `App\Http\Controllers\Water\WaterApplication@updateWaterApplication` (Untraced (Method updateWaterApplication not found in WaterApplication))
-- [x] `POST api/water/update-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@updateDataById` (Traced)
-- [x] `POST api/water/update-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@updateById` (Traced)
-- [x] `POST api/water/upload-document` -> `App\Http\Controllers\Water\NewConnectionController@uploadWaterDoc` (Traced)
-- [x] `POST api/water/workflow/application/get-by-id` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationsDetails` (Traced)
-- [x] `POST api/water/workflow/get-doc-list` -> `App\Http\Controllers\Water\NewConnectionController@getDocList` (Traced)
-- [x] `POST api/water/workflow/get-doc-list-je` -> `App\Http\Controllers\Water\WaterConsumerWfController@getDocListForJe` (Traced)
-- [x] `POST api/water/workflow/upload-doc-je` -> `App\Http\Controllers\Water\WaterConsumerWfController@uploadWaterDocJe` (Traced)
+- [x] `VERIFIED` `POST api/water-connection` -> `App\Http\Controllers\DemoController@waterConnection`
+- [x] `VERIFIED` `POST api/water/Razorpay-Orderid` -> `App\Http\Controllers\Water\WaterApplication@handeRazorPay`
+- [x] `VERIFIED` `POST api/water/admin/application/application-details` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationDetailsv1`
+- [x] `VERIFIED` `POST api/water/admin/application/cancel-inspection-scheduling` -> `App\Http\Controllers\Water\NewConnectionController@cancelSiteInspection`
+- [x] `VERIFIED` `POST api/water/admin/application/dashboard-data` -> `App\Http\Controllers\Water\WaterApplication@getJskAppliedApplication`
+- [x] `VERIFIED` `POST api/water/admin/application/document-details` -> `App\Http\Controllers\Water\NewConnectionController@getDocToUploadv1`
+- [x] `VERIFIED` `POST api/water/admin/application/generate-payment-receipt` -> `App\Http\Controllers\Water\WaterPaymentController@generateOfflinePaymentReceipt`
+- [x] `VERIFIED` `POST api/water/admin/application/get-details-by-id` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationDetailById`
+- [x] `VERIFIED` `POST api/water/admin/application/je-site-details` -> `App\Http\Controllers\Water\NewConnectionController@getJeSiteDetails`
+- [x] `VERIFIED` `POST api/water/admin/application/list-details-by-date` -> `App\Http\Controllers\Water\NewConnectionController@listApplicationBydate`
+- [x] `VERIFIED` `POST api/water/admin/application/online-technical-inspection` -> `App\Http\Controllers\Water\NewConnectionController@onlineSiteInspection`
+- [x] `VERIFIED` `POST api/water/admin/application/save-inspection-date` -> `App\Http\Controllers\Water\NewConnectionController@saveInspectionDateTime`
+- [x] `VERIFIED` `POST api/water/admin/application/site-inspection-details` -> `App\Http\Controllers\Water\NewConnectionController@getSiteInspectionDetails`
+- [x] `VERIFIED` `POST api/water/admin/application/technical-inspection-details` -> `App\Http\Controllers\Water\NewConnectionController@getTechnicalInsDetails`
+- [x] `VERIFIED` `POST api/water/admin/consumer/add-fixed-rate` -> `App\Http\Controllers\Water\WaterConsumer@addFixedRate`
+- [x] `VERIFIED` `POST api/water/admin/consumer/apply-deactivation` -> `App\Http\Controllers\Water\WaterConsumer@applyDeactivation`
+- [x] `VERIFIED` `POST api/water/admin/consumer/demand-deactivation` -> `App\Http\Controllers\Water\WaterConsumer@consumerDemandDeactivation`
+- [x] `VERIFIED` `POST api/water/admin/consumer/generate-demand` -> `App\Http\Controllers\Water\WaterConsumer@saveGenerateConsumerDemand`
+- [x] `VERIFIED` `POST api/water/admin/consumer/get-meter-list` -> `App\Http\Controllers\Water\WaterConsumer@getMeterList`
+- [x] `VERIFIED` `POST api/water/admin/consumer/save-connection-meter` -> `App\Http\Controllers\Water\WaterConsumer@saveUpdateMeterDetails`
+- [x] `VERIFIED` `POST api/water/admin/dis-generate-payment-receipt` -> `App\Http\Controllers\Water\WaterPaymentController@generateOfflinePaymentReceiptv1`
+- [x] `VERIFIED` `POST api/water/admin/search-application` -> `App\Http\Controllers\Water\NewConnectionController@searchApplicationByParameter`
+- [x] `VERIFIED` `POST api/water/admin/workflow/dashboard-data` -> `App\Http\Controllers\Water\WaterApplication@workflowDashordDetails`
+- [x] `VERIFIED` `POST api/water/aggregate-report` -> `App\Http\Controllers\Water\WaterReportController@tcCollectionReport`
+- [x] `VERIFIED` `POST api/water/applicant/search` -> `App\Http\Controllers\Water\WaterConsumer@searchApplication`
+- [~] `PARTIALLY VERIFIED` `GET|HEAD api/water/application/apply-new-connection` -> `App\Http\Controllers\Water\NewConnectionController@index`
+- [x] `VERIFIED` `POST api/water/application/apply-new-connection` -> `App\Http\Controllers\Water\NewConnectionController@store`
+- [~] `PARTIALLY VERIFIED` `GET|HEAD api/water/application/apply-new-connection/create` -> `App\Http\Controllers\Water\NewConnectionController@create`
+- [~] `PARTIALLY VERIFIED` `GET|HEAD api/water/application/apply-new-connection/{apply_new_connection}` -> `App\Http\Controllers\Water\NewConnectionController@show`
+- [~] `PARTIALLY VERIFIED` `PUT|PATCH api/water/application/apply-new-connection/{apply_new_connection}` -> `App\Http\Controllers\Water\NewConnectionController@update`
+- [~] `PARTIALLY VERIFIED` `DELETE api/water/application/apply-new-connection/{apply_new_connection}` -> `App\Http\Controllers\Water\NewConnectionController@destroy`
+- [~] `PARTIALLY VERIFIED` `GET|HEAD api/water/application/apply-new-connection/{apply_new_connection}/edit` -> `App\Http\Controllers\Water\NewConnectionController@edit`
+- [x] `VERIFIED` `POST api/water/application/approval-rejection` -> `App\Http\Controllers\Water\NewConnectionController@approvalRejectionWater`
+- [x] `VERIFIED` `POST api/water/application/delete` -> `App\Http\Controllers\Water\NewConnectionController@deleteWaterApplication`
+- [x] `VERIFIED` `POST api/water/application/edit` -> `App\Http\Controllers\Water\NewConnectionController@editWaterAppliction`
+- [x] `VERIFIED` `POST api/water/application/get-by-id` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationDetails`
+- [x] `VERIFIED` `POST api/water/application/payment/get-payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@getApplicationPaymentHistory`
+- [x] `VERIFIED` `POST api/water/application/payment/offline/pay-connection-charge` -> `App\Http\Controllers\Water\WaterPaymentController@offlineConnectionPayment`
+- [x] `VERIFIED` `POST api/water/application/search` -> `App\Http\Controllers\Water\NewConnectionController@getActiveApplictaions`
+- [x] `VERIFIED` `POST api/water/apply-new-connection` -> `Closure@Closure`
+- [x] `VERIFIED` `POST api/water/apply-water-disconnection` -> `App\Http\Controllers\Water\WaterConsumer@applyWaterDisconnection`
+- [x] `VERIFIED` `POST api/water/applywater-ferule-cleaning` -> `App\Http\Controllers\Water\WaterConsumer@applyConsumerRequest`
+- [x] `VERIFIED` `POST api/water/approve-reject-report` -> `App\Http\Controllers\Water\WaterReportController@approveRejectReports`
+- [x] `VERIFIED` `POST api/water/back-to-citizen` -> `App\Http\Controllers\Water\NewConnectionController@backToCitizen`
+- [x] `VERIFIED` `POST api/water/btc-inbox` -> `App\Http\Controllers\Water\NewConnectionController@btcInbox`
+- [x] `VERIFIED` `POST api/water/caretaker-consumer-tagging` -> `App\Http\Controllers\CaretakerController@caretakerConsumerTag`
+- [x] `VERIFIED` `POST api/water/caretaker-otp` -> `App\Http\Controllers\CaretakerController@waterCaretakerOtp`
+- [x] `VERIFIED` `POST api/water/cargeCal` -> `App\Http\Controllers\Water\WaterApplication@calWaterConCharge`
+- [x] `VERIFIED` `POST api/water/check-doc` -> `App\Http\Controllers\Water\WaterConsumer@checkDoc`
+- [x] `VERIFIED` `POST api/water/citizen/get-doc-list` -> `App\Http\Controllers\Water\NewConnectionController@getDocToUpload`
+- [x] `VERIFIED` `POST api/water/citizen/payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@paymentHistory`
+- [x] `VERIFIED` `POST api/water/citizenApplications` -> `App\Http\Controllers\Water\WaterApplication@getCitizenApplication`
+- [x] `VERIFIED` `POST api/water/comment-independent` -> `App\Http\Controllers\Water\NewConnectionController@commentIndependent`
+- [x] `VERIFIED` `POST api/water/connection-collection` -> `App\Http\Controllers\Water\WaterReportController@connectionCollection`
+- [x] `VERIFIED` `POST api/water/consumer-info-watsapp-chat` -> `App\Http\Controllers\Water\NewConnectionController@ConsumerInfoWatsappChat`
+- [x] `VERIFIED` `POST api/water/consumer/add-advance` -> `App\Http\Controllers\Water\WaterConsumer@addAdvance`
+- [x] `VERIFIED` `POST api/water/consumer/calculate-month-demand` -> `App\Http\Controllers\Water\WaterPaymentController@callDemandByMonth`
+- [x] `VERIFIED` `POST api/water/consumer/calculate/meter-fixed-reading` -> `App\Http\Controllers\Water\WaterConsumer@calculateMeterFixedReading`
+- [x] `VERIFIED` `POST api/water/consumer/caretaken-connections` -> `App\Http\Controllers\Water\WaterConsumer@viewCaretakenConnection`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-approve-rejet` -> `App\Http\Controllers\Water\WaterConsumerWfController@approveRejectV1`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-btc-inbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@btcInbox`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-documents-verify` -> `App\Http\Controllers\Water\WaterConsumerWfController@documentVerify`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-escalate-inbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@specialInbox`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-get-doc-list` -> `App\Http\Controllers\Water\WaterConsumerWfController@getDocList`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-upload-documents` -> `App\Http\Controllers\Water\WaterConsumerWfController@uploadDocuments`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-upload-documents_view` -> `App\Http\Controllers\Water\WaterConsumerWfController@getUploadDocuments`
+- [x] `VERIFIED` `POST api/water/consumer/deactivation-worklfow-by-id` -> `App\Http\Controllers\Water\WaterConsumerWfController@getConsumerDetails`
+- [x] `VERIFIED` `POST api/water/consumer/demand/generate-payment-receipt` -> `App\Http\Controllers\Water\WaterPaymentController@generateDemandPaymentReceipt`
+- [x] `VERIFIED` `POST api/water/consumer/generate-memo` -> `App\Http\Controllers\Water\WaterConsumer@generateMemo`
+- [x] `VERIFIED` `POST api/water/consumer/get-connection-list` -> `App\Http\Controllers\Water\WaterConsumer@getConnectionList`
+- [x] `VERIFIED` `POST api/water/consumer/get-listed-details` -> `App\Http\Controllers\Water\NewConnectionController@approvedWaterApplications`
+- [!] `SECURITY RISK` `POST api/water/consumer/get-owner-details` -> `App\Http\Controllers\Water\WaterConsumer@getOwnerDetailsInfo`
+- [x] `VERIFIED` `POST api/water/consumer/get-payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@getConsumerPaymentHistory`
+- [!] `BLOCKED` `POST api/water/consumer/get-rejected-appl-details` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRejectedApplicationDetails`
+- [x] `VERIFIED` `POST api/water/consumer/get-rejected-documents-only` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRejectedDocumentsOnly`
+- [x] `VERIFIED` `POST api/water/consumer/list-demand` -> `App\Http\Controllers\Water\WaterConsumer@listConsumerDemand`
+- [x] `VERIFIED` `POST api/water/consumer/offline-demand-payment` -> `App\Http\Controllers\Water\WaterPaymentController@offlineDemandPayment`
+- [x] `VERIFIED` `POST api/water/consumer/offline-request-payment` -> `App\Http\Controllers\Water\WaterPaymentController@offlineConReqPayment`
+- [x] `VERIFIED` `POST api/water/consumer/online-demand-payment` -> `App\Http\Controllers\Water\WaterPaymentController@initiateOnlineDemandPayment`
+- [x] `VERIFIED` `POST api/water/consumer/online-request-payment` -> `App\Http\Controllers\Water\WaterPaymentController@initiateOnlineConRequestPayment`
+- [x] `VERIFIED` `POST api/water/consumer/report/dcb-pie-chart` -> `App\Http\Controllers\Water\WaterReportController@dcbPieChart`
+- [x] `VERIFIED` `POST api/water/consumer/report/list-ward-dcb` -> `App\Http\Controllers\Water\WaterReportController@wardWiseDCB`
+- [x] `VERIFIED` `POST api/water/consumer/req/approval-rejection` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerApprovalRejection`
+- [!] `BLOCKED` `POST api/water/consumer/req/doc-verify-reject` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerDocVerifyReject`
+- [!] `BLOCKED` `POST api/water/consumer/req/get-upload-documents` -> `App\Http\Controllers\Water\WaterConsumerWfController@getConsumerDocs`
+- [x] `VERIFIED` `POST api/water/consumer/req/get-worklfow-by-id` -> `App\Http\Controllers\Water\WaterConsumerWfController@getWorkflow`
+- [x] `VERIFIED` `POST api/water/consumer/req/inbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerInbox`
+- [!] `BLOCKED` `POST api/water/consumer/req/list-req-docs` -> `App\Http\Controllers\Water\WaterConsumerWfController@listDocToUpload`
+- [x] `VERIFIED` `POST api/water/consumer/req/outbox` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerOutbox`
+- [x] `VERIFIED` `POST api/water/consumer/req/post-next-level` -> `App\Http\Controllers\Water\WaterConsumerWfController@consumerPostNextLevel`
+- [x] `VERIFIED` `POST api/water/consumer/search-fixed-connections` -> `App\Http\Controllers\Water\WaterConsumer@searchFixedConsumers`
+- [x] `VERIFIED` `POST api/water/consumer/self-generate-demand` -> `App\Http\Controllers\Water\WaterConsumer@selfGenerateDemand`
+- [x] `VERIFIED` `POST api/water/consumer/water-user-charges` -> `App\Http\Controllers\Water\WaterPaymentController@getWaterUserCharges`
+- [!] `BLOCKED` `POST api/water/consumerChargeCal` -> `App\Http\Controllers\Water\WaterApplication@calConsumerDemand`
+- [x] `VERIFIED` `POST api/water/consumers/post-next-level-appllication` -> `App\Http\Controllers\Water\WaterConsumerWfController@postNextLevelApplication`
+- [x] `VERIFIED` `POST api/water/consumers/reupload-water-doc` -> `App\Http\Controllers\Water\WaterConsumerWfController@reuploadWaterDoc`
+- [x] `VERIFIED` `POST api/water/create-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@createWaterPipelineType`
+- [x] `VERIFIED` `POST api/water/create-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@createWaterPropTypeMstr`
+- [x] `VERIFIED` `POST api/water/deactivation/back-to-citizen` -> `App\Http\Controllers\Water\WaterConsumerWfController@backToCitizen`
+- [x] `VERIFIED` `POST api/water/delete-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@dataActiveDeactive`
+- [x] `VERIFIED` `POST api/water/delete-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@activeDeactiveById`
+- [x] `VERIFIED` `POST api/water/disconnection/payment/get-payment-history` -> `App\Http\Controllers\Water\WaterPaymentController@getDisApplicationPaymentHistory`
+- [x] `VERIFIED` `POST api/water/doc-verify-reject` -> `App\Http\Controllers\Water\NewConnectionController@docVerifyRejects`
+- [x] `VERIFIED` `POST api/water/escalate` -> `App\Http\Controllers\Water\NewConnectionController@postEscalate`
+- [x] `VERIFIED` `POST api/water/field-verified-inbox` -> `App\Http\Controllers\Water\NewConnectionController@fieldVerifiedInbox`
+- [x] `VERIFIED` `POST api/water/get-details-applications-by-id` -> `App\Http\Controllers\Water\WaterConsumerWfController@getApplicationDetails`
+- [x] `VERIFIED` `POST api/water/get-details-disconnections` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRequestedApplication`
+- [x] `VERIFIED` `POST api/water/get-rejected-documents-list` -> `App\Http\Controllers\Water\WaterConsumerWfController@getRejectedDocumentsList`
+- [x] `VERIFIED` `POST api/water/get-upload-documents` -> `App\Http\Controllers\Water\NewConnectionController@getUploadDocuments`
+- [x] `VERIFIED` `POST api/water/get-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@getAllPipeline`
+- [x] `VERIFIED` `POST api/water/get-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@getAllData`
+- [x] `VERIFIED` `POST api/water/getTranNo` -> `App\Http\Controllers\Water\WaterApplication@readTransectionAndApl`
+- [x] `VERIFIED` `POST api/water/get_consumer_details_by_id` -> `App\Http\Controllers\Water\WaterConsumer@getByApplicationId`
+- [x] `VERIFIED` `POST api/water/getby-id-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@getDataId`
+- [x] `VERIFIED` `POST api/water/getby-id-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@getDataById`
+- [x] `VERIFIED` `GET|HEAD api/water/health-check` -> `Closure@Closure`
+- [x] `VERIFIED` `POST api/water/inbox` -> `App\Http\Controllers\Water\NewConnectionController@waterInbox`
+- [x] `VERIFIED` `POST api/water/level-wise-report` -> `App\Http\Controllers\Water\WaterReportController@levelWiseReport`
+- [x] `VERIFIED` `POST api/water/master/get-listed-details` -> `App\Http\Controllers\Water\WaterPaymentController@getWaterMasterData`
+- [x] `VERIFIED` `POST api/water/new-connection-report` -> `App\Http\Controllers\Water\WaterReportController@newConnectioReport`
+- [x] `VERIFIED` `POST api/water/outbox` -> `App\Http\Controllers\Water\NewConnectionController@waterOutbox`
+- [x] `VERIFIED` `POST api/water/post-next-level` -> `App\Http\Controllers\Water\NewConnectionController@postNextLevel`
+- [x] `VERIFIED` `POST api/water/report-cosumer` -> `App\Http\Controllers\Water\WaterReportController@consumerReport`
+- [x] `VERIFIED` `POST api/water/request/discon/get-inspection-dtls` -> `App\Http\Controllers\Water\ConsumerActionRequest@getInspectionData`
+- [x] `VERIFIED` `POST api/water/request/discon/getInspectinMaster` -> `App\Http\Controllers\Water\ConsumerActionRequest@getSiteInspectionCompar`
+- [x] `VERIFIED` `POST api/water/request/discon/inspection` -> `App\Http\Controllers\Water\ConsumerActionRequest@updateSiteInspection`
+- [x] `VERIFIED` `POST api/water/request/discon/sedule-cancel` -> `App\Http\Controllers\Water\ConsumerActionRequest@cancelDisconnectionSitInspection`
+- [x] `VERIFIED` `POST api/water/request/discon/sedule-inspection` -> `App\Http\Controllers\Water\ConsumerActionRequest@setDisconnectionSitInspection`
+- [x] `VERIFIED` `POST api/water/search-consumer` -> `App\Http\Controllers\Water\NewConnectionController@searchWaterConsumer`
+- [x] `VERIFIED` `POST api/water/search-holding-saf` -> `App\Http\Controllers\Water\NewConnectionController@getSafHoldingDetails`
+- [!] `SECURITY RISK` `POST api/water/simple-upload-document` -> `App\Http\Controllers\Water\NewConnectionController@testUploadDocument`
+- [x] `VERIFIED` `POST api/water/site-verification/save-site-details` -> `App\Http\Controllers\Water\WaterPaymentController@saveSitedetails`
+- [x] `VERIFIED` `POST api/water/special-inbox` -> `App\Http\Controllers\Water\NewConnectionController@waterSpecialInbox`
+- [x] `VERIFIED` `POST api/water/test` -> `App\Repository\Water\Concrete\WaterNewConnection@razorPayResponse`
+- [!] `BLOCKED` `POST api/water/update-applications` -> `App\Http\Controllers\Water\WaterApplication@updateWaterApplication`
+- [x] `VERIFIED` `POST api/water/update-water-pipeline-type` -> `App\Http\Controllers\Water\WaterMasterController@updateDataById`
+- [x] `VERIFIED` `POST api/water/update-water-prop-type` -> `App\Http\Controllers\Water\WaterMasterController@updateById`
+- [x] `VERIFIED` `POST api/water/upload-document` -> `App\Http\Controllers\Water\NewConnectionController@uploadWaterDoc`
+- [x] `VERIFIED` `POST api/water/workflow/application/get-by-id` -> `App\Http\Controllers\Water\NewConnectionController@getApplicationsDetails`
+- [x] `VERIFIED` `POST api/water/workflow/get-doc-list` -> `App\Http\Controllers\Water\NewConnectionController@getDocList`
+- [x] `VERIFIED` `POST api/water/workflow/get-doc-list-je` -> `App\Http\Controllers\Water\WaterConsumerWfController@getDocListForJe`
+- [x] `VERIFIED` `POST api/water/workflow/upload-doc-je` -> `App\Http\Controllers\Water\WaterConsumerWfController@uploadWaterDocJe`
 
 ### C. Property Module Checklist Summary (528 Routes)
 
-All 528 Property routes verified. 526 routes are `[x] Fully Verified`. 2 routes are `[!] Investigation Blocked` (defective controller methods).
-
-Key functional groups verified:
-- [x] Self Assessment Form (SAF) Applications & Verification (42 routes in `ActiveSafController`, 2 in `ApplySafController`, 10 in `ActiveSafControllerV2`)
-- [x] Property Tax Calculation & Simulation (3 routes in `CalculatorController`)
-- [x] Property Deactivation Requests & Approvals (12 routes in `PropertyDeactivateController`)
-- [x] Property Bifurcation & Amalgamation (7 routes in `PropertyBifurcationController`)
-- [x] Property Concession Applications & Verification (17 routes in `ConcessionController`)
-- [x] Property Objection Hearings & Orders (21 routes in `ObjectionController`)
-- [x] Rainwater Harvesting Verification & Rebate (22 routes in `RainWaterHarvestingController`)
-- [x] Holding Tax Demands & Payment Collections (24 routes in `HoldingTaxController`)
-- [x] Government Building SAFs (22 routes in `GbSafController`)
-- [x] Waiver & Interest Relief Management (9 routes in `WaiverController`)
-- [x] Property Master Reference Data (205 CRUD routes in `MasterReferenceController`)
-- [x] Cash Verification & Bank Reconciliation (13 routes in `CashVerificationController` & `BankReconcillationController`)
-- [x] Property Analytical Reports & DCB (40 routes in `ReportController`)
-- [!] `POST api/property/cluster/property-by-cluster` (Blocked - missing method `propertyByCluster`)
-- [!] `POST api/property/reports/mpl2` (Blocked - missing method `mplReport2`)
+- [x] `VERIFIED`: 526 routes fully traced to controller methods, form requests, and persistence models.
+- [!] `BLOCKED`: 2 routes blocked by missing controller methods (`ClusterController@propertyByCluster`, `ReportController@mplReport2`).

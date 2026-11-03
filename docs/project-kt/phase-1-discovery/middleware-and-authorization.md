@@ -1,42 +1,40 @@
-# Phase 1 Discovery: Middleware, Authentication & Authorization Architecture
+# Phase 1 Discovery: Middleware, Authentication & Authorization Architecture (Verified & Corrected)
 
 ## 1. Executive Summary
 
 In `egov-backend`, authentication and authorization are structured around an API Gateway model:
-- **Upstream Gateway**: The client communicates through an authentication gateway (e.g., `Authorisation-Service`), which validates credentials, generates or verifies JWT/Sanctum tokens, and proxies requests to `egov-backend` with serialized user identity payloads (`$request->auth` and `$request->currentAccessToken`).
-- **Domain Hydration (`AuthMaker`)**: The `AuthMaker` middleware unpacks `$request->auth`, instantiates either an employee/official user (`App\Models\User`) or a citizen (`App\Models\ActiveCitizen`), and logs them into Laravel's session state (`Auth::login()`).
-- **Multi-Tenant Scoping (`UlbFilter`)**: All queries are automatically scoped by Urban Local Body (`ulb_id`) using an Eloquent Global Scope (`InternalUlbScope`) and query interceptor.
-- **Workflow & Ward Authorization (`WardPermission`)**: Fine-grained role permissions and ward restrictions are enforced at the repository and controller levels using Redis-backed role caching (`wf_roleusermaps`, `wf_workflowrolemaps`, `ulb_ward_masters`).
+- **Upstream Gateway**: The client communicates through an authentication gateway (`Authorisation-Service`), which validates credentials, generates or verifies JWT/Sanctum tokens, and proxies requests to `egov-backend` with serialized user identity payloads (`$request->auth` and `$request->currentAccessToken`).
+- **Domain Hydration ([`AuthMaker`](file:///var/www/html/egov-backend/app/Http/Middleware/AuthMaker.php#L19-L43))**: The `AuthMaker` middleware unpacks `$request->auth`, instantiates either an employee/official user ([`App\Models\User`](file:///var/www/html/egov-backend/app/Models/User.php)) or a citizen ([`App\Models\ActiveCitizen`](file:///var/www/html/egov-backend/app/Models/ActiveCitizen.php)), and logs them into Laravel's session state (`Auth::login()`).
+- **Multi-Tenant Scoping ([`UlbFilter`](file:///var/www/html/egov-backend/app/Traits/UlbFilter.php#L31-L120))**: All queries are automatically scoped by Urban Local Body (`ulb_id`) using an Eloquent Global Scope (`InternalUlbScope`).
+- **Workflow & Ward Authorization ([`WardPermission`](file:///var/www/html/egov-backend/app/Traits/Property/WardPermission.php#L22-L78))**: Fine-grained role permissions and ward restrictions are enforced at the repository and controller levels using Redis-backed role caching (`wf_roleusermaps`, `wf_workflowrolemaps`, `ulb_ward_masters`).
+- **Verification Status**: `VERIFIED`
 
 ---
 
-## 2. Complete Middleware Portfolio
+## 2. Complete Middleware Portfolio & Aliases
 
-The application defines 17 middleware in `app/Http/Middleware/`, registered across global, group, and route-specific stacks in `app/Http/Kernel.php`:
+Registered across global, group, and route-specific stacks in [`app/Http/Kernel.php:14-87`](file:///var/www/html/egov-backend/app/Http/Kernel.php#L14-L87):
 
-| Middleware Class | Alias / Group | Function & Execution Mechanics |
-|---|---|---|
-| `ForceJsonResponse` | `json.response` | Checks if URI begins with `api/*` and forces the `Accept: application/json` HTTP header to ensure consistent JSON API responses. |
-| `AuthMaker` | `auth_maker` | Decodes `$request->auth` and `$request->currentAccessToken`. Automatically calls `Auth::login()` with `App\Models\User` (if `tokenable_type == 'App\Models\Auth\User'`) or `App\Models\ActiveCitizen`. Maps all auth attributes directly onto the authenticated user instance. |
-| `ApiLogger` | `apilogger` | Calculates total execution time in milliseconds (`LARAVEL_START` to end). Inspects `$response->getContent()`. If `status === false`, logs an error with IP, method, URL, execution time, and error reason to the `apilogs` Monolog channel. Otherwise logs success. |
-| `ApiKeyMiddleware` | `api.key` | Verifies incoming `API-KEY` request header against `config('module-constants.API_KEY')`. If present, validates `apiToken` against `App\Models\Auth\PersonalAccessToken`. |
-| `ExpireBearerToken` | `expireBearerToken` | Validates bearer token expiration timestamps against database token tables. |
-| `HandleDateFormatMiddleware` | `handleDateFormat` | Sanitizes and transforms incoming date string parameters into standard `Y-m-d` or `Y-m-d H:i:s` formats. |
-| `ApiLogRequests` | `request_logger` | Legacy request logger writing detailed input payloads into disk logs. |
-| `XssSanitizer` | `XssSanitizer` | Strips dangerous HTML tags, javascript execution payloads, and cross-site scripting attempts from input parameters. |
-| `Cors` / `HandleCors` | Global / `cors` | Configures allowed origins, headers, and pre-flight `OPTIONS` responses for web clients. |
-| `PreventRequestsDuringMaintenance` | Global | Checks maintenance mode (`artisan down`) and halts incoming traffic with a 503 response. |
-| `TrimStrings` | Global | Trims leading/trailing whitespace from request string inputs. |
-| `ConvertEmptyStringsToNull` | Global | Converts empty string parameters (`""`) to `null`. |
-| `ValidatePostSize` | Global | Prevents payload sizes larger than `post_max_size`. |
-| `TrustProxies` | Global | Resolves client real IP address when deployed behind Nginx, Docker, or reverse proxies. |
-| `EncryptCookies` | `web` group | Encrypts session cookies. |
-| `VerifyCsrfToken` | `web` group | Verifies CSRF tokens for web routes. |
-| `Authenticate` | `auth` | Default Laravel redirecting authenticator. |
+| Middleware Class | Alias / Group | Source Path | Function & Execution Mechanics | Verification Status |
+|---|---|---|---|:---:|
+| `ForceJsonResponse` | `json.response` | `app/Http/Middleware/ForceJsonResponse.php` | Enforces `Accept: application/json` HTTP header on `api/*` requests. | `VERIFIED` |
+| `AuthMaker` | `auth_maker` | `app/Http/Middleware/AuthMaker.php` | Unpacks `$request->auth` and `$request->currentAccessToken`. Hydrates and authenticates `User` or `ActiveCitizen`. | `VERIFIED` |
+| `ApiLogger` | `apilogger` | `app/Http/Middleware/ApiLogger.php` | Times request execution. Logs failures and successes to Monolog channel `apilogs`. | `VERIFIED` |
+| `ApiKeyMiddleware` | `api.key` | `app/Http/Middleware/ApiKeyMiddleware.php` | Verifies `API-KEY` header against `config('module-constants.API_KEY')`. Validates `PersonalAccessToken`. | `VERIFIED` |
+| `ExpireBearerToken` | `expireBearerToken`| `app/Http/Middleware/ExpireBearerToken.php` | Checks bearer token expiration timestamps. | `VERIFIED` |
+| `HandleDateFormatMiddleware` | `handleDateFormat`| `app/Http/Middleware/HandleDateFormatMiddleware.php` | Sanitizes incoming dates to `Y-m-d`. | `VERIFIED` |
+| `ApiLogRequests` | `request_logger` | `app/Http/Middleware/ApiLogRequests.php` | Legacy payload logger. | `VERIFIED` |
+| `XssSanitizer` | `XssSanitizer` | `app/Http/Middleware/XssSanitizer.php` | Strips dangerous script tags and XSS payloads. | `VERIFIED` |
+| `HandleCors` | Global / `cors` | `vendor/fruitcake/laravel-cors` | CORS headers and pre-flight handling. | `VERIFIED` |
+| `PreventRequestsDuringMaintenance` | Global | Framework | 503 maintenance mode check. | `VERIFIED` |
+| `TrimStrings` | Global | Framework | Trims whitespace on string inputs. | `VERIFIED` |
+| `ConvertEmptyStringsToNull` | Global | Framework | Converts `""` to `null`. | `VERIFIED` |
+| `ValidatePostSize` | Global | Framework | Enforces `post_max_size`. | `VERIFIED` |
+| `TrustProxies` | Global | Framework | Resolves client IP behind reverse proxy / Docker. | `VERIFIED` |
 
 ---
 
-## 3. Deep-Dive: Authentication Hydration (`AuthMaker.php`)
+## 3. Deep-Dive: Authentication Hydration (`AuthMaker.php:19-43`)
 
 ```php
 public function handle(Request $request, Closure $next)
@@ -67,75 +65,51 @@ public function handle(Request $request, Closure $next)
 ```
 
 ### Architectural Implications:
-1. **Stateless Gateway Identity**: The backend does not need to hit a centralized user database on every API call. The user payload is passed from the Gateway, parsed, and hydrated in-memory for the duration of the request.
-2. **Dual User Model**:
-   - `App\Models\User`: Municipal employees, Tax Collectors (TC), Junior Engineers (JE), Executive Officers (EO), Section Officers, and System Administrators. Attributes include `id`, `name`, `email`, `ulb_id`, `user_type`.
-   - `App\Models\ActiveCitizen`: Property owners, trade license applicants, and consumer applicants. Attributes include `id`, `citizen_name`, `mobile`, `email`.
-3. **Implicit Authentication Fallback**: Routes that are not wrapped in `auth_maker` or that receive requests without `$request->auth` will have `Auth::user()` evaluate to `null`.
+1. **Stateless Gateway Identity**: The backend does not query a users table on every request. Identity is hydrated directly from the Gateway's JSON payload.
+2. **Dual Model Differentiation**:
+   - `App\Models\User`: Municipal officials, Tax Collectors, Junior Engineers, Executive Officers.
+   - `App\Models\ActiveCitizen`: Property owners, trade applicants, and water consumers.
+3. **Status**: `VERIFIED`
 
 ---
 
-## 4. Multi-Tenant ULB Scoping Architecture (`UlbFilter.php`)
+## 4. Multi-Tenant Scoping (`UlbFilter.php:31-120`)
 
-Urban Local Bodies (ULBs) represent individual municipal corporations (e.g., Ranchi Municipal Corporation, Dhanbad Municipal Corporation). Multi-tenancy is enforced transparently:
+Urban Local Bodies (ULBs) represent individual municipal corporations. Multi-tenancy is enforced transparently:
 
-```mermaid
-graph TD
-    Request[HTTP Request] --> AuthCheck[Resolve Active ULB ID<br/>from Auth User or Request Header]
-    AuthCheck --> EloquentScope[InternalUlbScope: Global Eloquent Scope]
-    EloquentScope --> SchemaCheck{Does Target Table<br/>Have 'ulb_id' Column?}
-    SchemaCheck -- Yes --> InjectWhere[Automatically append: WHERE table.ulb_id = ?]
-    SchemaCheck -- No --> PassThrough[Execute Query Unaltered]
-    InjectWhere --> Postgres[(PostgreSQL Database)]
-```
-
-### Key Components of `UlbFilter`:
-1. **`InternalUlbScope`**: Implements `Illuminate\Database\Eloquent\Scope`. Before any query executes on a model, it checks an in-memory schema cache (`$hasUlbColumn`). If the table contains `ulb_id`, it appends `$builder->where($table . '.ulb_id', $ulbId)`.
-2. **`UlbFilter::withoutUlb()`**: Closure wrapper used by state-level dashboards and super-admin reports to temporarily disable the scope:
-   ```php
-   UlbFilter::withoutUlb(function() {
-       return PropProperty::count(); // Queries across ALL ULBs
-   });
-   ```
+1. **`InternalUlbScope`** (`app/Traits/UlbFilter.php:143-188`):
+   - Implements `Illuminate\Database\Eloquent\Scope`.
+   - Checks an in-memory schema cache (`$hasUlbColumn`). If the table contains `ulb_id`, automatically injects `$builder->where($table . '.ulb_id', $ulbId)`.
+2. **`UlbFilter::withoutUlb()`** (`app/Traits/UlbFilter.php:80-92`):
+   - Scope bypass used exclusively by state-level aggregated dashboards to query across all municipal corporations.
+3. **Status**: `VERIFIED`
 
 ---
 
-## 5. Workflow Authorization & Role Mapping (`WardPermission.php`)
+## 5. Security Vulnerability & Risk Analysis
 
-Role-Based Access Control (RBAC) in `egov-backend` is tied to the municipal workflow state machine.
+### A. Critical Security Risks (`SECURITY RISK`)
 
-### A. Workflow Schema Structure
-- `wf_masters`: Registered modules (`module_id = 1` for Property, `module_id = 2` for Trade, `module_id = 3` for Water).
-- `wf_workflows`: Specific workflows within a module (e.g., New SAF, Reassessment, Trade License, Water Disconnection).
-- `wf_roles`: Functional roles (e.g., `Dealing Assistant (DA)`, `Tax Collector (TC)`, `Junior Engineer (JE)`, `Executive Officer (EO)`).
-- `wf_workflowrolemaps`: Directed graph defining which role can forward/backward an application to another role:
-  - `forward_id`: Role ID of the next destination in the approval chain.
-  - `backward_id`: Role ID to send Back To Citizen (BTC) or backward for clarification.
-- `wf_roleusermaps`: Links specific user accounts to workflow roles within a given ULB.
-
-### B. Redis Role Caching
-To minimize heavy recursive SQL joins across workflow tables, `WardPermission` caches user permissions in Redis:
-- `workflow_candidate:{user_id}`: Verifies whether the user is an active candidate in the ULB.
-- `WardPermission:{user_id}`: Array of ward IDs (`ulb_ward_id`) assigned to the officer.
-- `WorkFlowRoles:{user_id}:{workflow_id}`: Full forwarding graph for the user.
-
-### C. Citizen Boundary Enforcement
-Citizens are prevented from accessing official workflow stages:
-- In `TradeCitizenController`, `ActiveSafController`, and `WaterConsumer`, queries filter by:
-  ```php
-  $query->where('citizen_id', Auth::user()->id);
-  ```
-- Any attempt by a citizen to call internal workflow forwarding (`postNextLevel`, `approveReject`) is blocked because their user object lacks matching records in `wf_roleusermaps`.
+| Vulnerability Type | Endpoint / Source Location | Defect Mechanism | Security Impact | Status |
+|---|---|---|---|:---:|
+| **Unauthenticated Data Exposure** | `POST api/trade/application-search/get-owner-details` (`routes/trade.php:206`) | Line 206 declaration outside middleware group overwrites line 112 declaration. Effective middleware is `['api']`. | Any unauthenticated caller can query trade owner names, mobile numbers, and business addresses by passing license number or application number. | `SECURITY RISK` |
+| **Unauthenticated Data Exposure** | `POST api/water/consumer/get-owner-details` (`routes/water.php:272`) | Declared outside middleware group; effective middleware is completely empty `[]`. | Unauthenticated public callers can query water consumer owner personal particulars. | `SECURITY RISK` |
+| **Unauthenticated Document Upload** | `POST api/water/simple-upload-document` (`routes/water.php:296`) | Declared outside middleware group with `middleware: []`. Mapped to `NewConnectionController@testUploadDocument`. | Allows unrestricted, unauthenticated file uploads directly to the server or DMS microservice. | `SECURITY RISK` |
+| **Global Rate Limiting Bypass** | All 139 routes in `routes/water.php` (`RouteServiceProvider.php:46-56`) | Duplicate route file registration without `->middleware('api')` overwrites the middlewared pass. | Global rate limiter (`throttle:api`) is inactive across the entire Water module. Susceptible to DoS. | `SECURITY RISK` |
+| **Insecure Direct Object Reference (IDOR)** | `GET api/trade/license-certificate/{id}` (`routes/trade.php:197`) | Declared in unauthenticated group; takes raw integer `$id`. | Any caller can iterate sequential integer IDs to download official trade license certificates of other businesses. | `SECURITY RISK` |
+| **Insecure Direct Object Reference (IDOR)** | `GET api/trade/payment-receipt/{id}/{transectionId}` (`routes/trade.php:195`) | Declared in unauthenticated group; takes raw integer IDs. | Exposes financial transaction receipts across businesses. | `SECURITY RISK` |
+| **Dead Debug Route in Production** | `POST api/water/apply-new-connection` (`routes/water.php:33`) | Closure executes `dd('Welcome to simple Water route file')`. | Exposes internal Laravel debug screen and server configuration if invoked. | `SECURITY RISK` |
 
 ---
 
-## 6. Security Analysis & Vulnerabilities Identified
+## 6. Workflow Authorization & Role Mapping (`WardPermission.php:22-78`)
 
-1. **Unprotected Public Routes in Water**:
-   - `POST /api/water/simple-upload-document`: Does not apply `auth_maker`. Allows unauthenticated document uploads.
-   - Resource route generation on `api/water/application/apply-new-connection`: Generates public `GET`, `PUT`, `DELETE` methods that fall through to unimplemented controller methods.
-2. **Insecure Direct Object Reference (IDOR) Risks in Legacy Lookups**:
-   - Several reference endpoints (e.g. `POST /api/property/get-prop-by-id`) take `id` directly from `$request->id` without verifying that the requesting citizen owns the target holding, relying solely on ULB scoping.
-3. **Water Route Overwrite Removing Throttle**:
-   - Due to the duplicate registration in `RouteServiceProvider.php`, water endpoints run without the `throttle:api` rate limiter, leaving them open to brute-force or high-frequency polling.
-
+Role-Based Access Control (RBAC) in `egov-backend` is tied to the municipal workflow state machine:
+- **Redis Permission Caching**:
+  - `workflow_candidate:{user_id}`: Verifies whether the user is an active candidate in the ULB.
+  - `WardPermission:{user_id}`: Array of ward IDs (`ulb_ward_id`) assigned to the officer.
+  - `WorkFlowRoles:{user_id}:{workflow_id}`: Forwarding graph for the user.
+- **Citizen vs Official Boundary**:
+  - Citizens have no records in `wf_roleusermaps`. Any call to `postNextLevel` or `approvalRejection` aborts with `"You Are Not Authorized"`.
+  - Official controllers query workflows matching the user's role: `whereIn('current_role', $roleIds)`.
+- **Status**: `VERIFIED`
